@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCompiler — Interactive Compiler Construction</title>
+  <meta name="description" content="An interactive mini compiler for learning compiler construction phases: lexical analysis, parsing, AST, symbol table, semantic analysis, and IR generation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="url(#logoGrad)"/>
+            <path d="M10 14l6 6-6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 26h10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366f1"/>
+                <stop offset="1" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">MiniCompiler</span>
+          <span class="logo-sub">Compiler Construction Lab</span>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active" data-view="compiler">Compiler</button>
+        <button class="nav-btn" data-view="docs">Language Docs</button>
+        <button class="nav-btn" data-view="examples">Examples</button>
+      </nav>
+      <div class="header-badge">
+        <span class="badge-dot"></span>
+        <span>Interactive Lab</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="app-main" id="view-compiler">
+    <!-- Left: Code Editor Panel -->
+    <section class="editor-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M4 6l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 14h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Source Code
+        </div>
+        <div class="editor-controls">
+          <select id="example-select" class="example-dropdown">
+            <option value="">— Load Example —</option>
+            <option value="basic">Basic Arithmetic</option>
+            <option value="conditions">If / Else</option>
+            <option value="loops">While Loop</option>
+            <option value="functions">Functions</option>
+            <option value="complex">Complex Program</option>
+          </select>
+          <button class="btn-icon" id="clear-btn" title="Clear">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="editor-wrapper">
+        <div class="line-numbers" id="line-numbers"></div>
+        <textarea id="code-editor" class="code-editor" spellcheck="false" placeholder="// Write your source code here...
+// Supported: variables, arithmetic, if/else, while, functions
+
+int x = 10;
+int y = 20;
+int z = x + y * 2;"></textarea>
+      </div>
+      <div class="editor-footer">
+        <div class="editor-info">
+          <span id="line-count">Lines: 6</span>
+          <span id="char-count">Chars: 0</span>
+          <span class="lang-badge">MiniLang v1.0</span>
+        </div>
+        <div class="editor-actions">
+          <button class="btn-secondary" id="format-btn">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M3 6h14M3 10h10M3 14h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Format
+          </button>
+          <button class="btn-primary" id="compile-btn">
+            <svg viewBox="0 0 20 20" fill="none"><polygon points="5,3 18,10 5,17" fill="currentColor"/></svg>
+            Compile
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Phases Panel -->
+    <section class="phases-panel">
+      <!-- Phase Tabs -->
+      <div class="phases-tabs" id="phases-tabs">
+        <button class="phase-tab" data-phase="tokens" data-index="0">
+          <div class="phase-num">1</div>
+          <div class="phase-info">
+            <div class="phase-name">Tokens</div>
+            <div class="phase-desc">Lexical Analysis</div>
+          </div>
+          <div class="phase-status" id="status-tokens"></div>
+        </button>
+        <div class="phase-arrow">→</div>
+        <button class="phase-tab" data-phase="ast" data-index="1">
+          <div class="phase-num">2</div>
+          <div class="phase-info">
+            <div class="phase-name">AST</div>
+            <div class="phase-desc">Syntax Analysis</div>
+          </div>
+          <div class="phase-status" id="status-ast"></div>
+        </button>
+        <div class="phase-arrow">→</div>
+        <button class="phase-tab" data-phase="symtable" data-index="2">
+          <div class="phase-num">3</div>
+          <div class="phase-info">
+            <div class="phase-name">Symbol Table</div>
+            <div class="phase-desc">Scope Analysis</div>
+          </div>
+          <div class="phase-status" id="status-symtable"></div>
+        </button>
+        <div class="phase-arrow">→</div>
+        <button class="phase-tab" data-phase="semantic" data-index="3">
+          <div class="phase-num">4</div>
+          <div class="phase-info">
+            <div class="phase-name">Semantic</div>
+            <div class="phase-desc">Type Checking</div>
+          </div>
+          <div class="phase-status" id="status-semantic"></div>
+        </button>
+        <div class="phase-arrow">→</div>
+        <button class="phase-tab" data-phase="ir" data-index="4">
+          <div class="phase-num">5</div>
+          <div class="phase-info">
+            <div class="phase-name">IR / TAC</div>
+            <div class="phase-desc">Code Generation</div>
+          </div>
+          <div class="phase-status" id="status-ir"></div>
+        </button>
+      </div>
+
+      <!-- Phase Content -->
+      <div class="phase-content-wrapper">
+        <!-- Tokens Phase -->
+        <div class="phase-content active" id="phase-tokens">
+          <div class="phase-header">
+            <h2>Phase 1: Lexical Analysis</h2>
+            <p>The lexer scans source code and converts it into a stream of <strong>tokens</strong>. Each token has a type and a value. Whitespace, comments and structure are discarded here.</p>
+          </div>
+          <div class="phase-body">
+            <div id="tokens-viz" class="tokens-container">
+              <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <div class="empty-text">Click <strong>Compile</strong> to run lexical analysis</div>
+              </div>
+            </div>
+            <div class="token-legend">
+              <div class="legend-item"><span class="token-chip" data-type="keyword">keyword</span></div>
+              <div class="legend-item"><span class="token-chip" data-type="identifier">identifier</span></div>
+              <div class="legend-item"><span class="token-chip" data-type="number">number</span></div>
+              <div class="legend-item"><span class="token-chip" data-type="string">string</span></div>
+              <div class="legend-item"><span class="token-chip" data-type="operator">operator</span></div>
+              <div class="legend-item"><span class="token-chip" data-type="delimiter">delimiter</span></div>
+              <div class="legend-item"><span class="token-chip" data-type="boolean">boolean</span></div>
+            </div>
+            <div id="token-table-wrapper" class="token-table-wrapper" style="display:none">
+              <table class="token-table">
+                <thead><tr><th>#</th><th>Token Type</th><th>Value</th><th>Line</th><th>Column</th></tr></thead>
+                <tbody id="token-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- AST Phase -->
+        <div class="phase-content" id="phase-ast">
+          <div class="phase-header">
+            <h2>Phase 2: Syntax Analysis (AST)</h2>
+            <p>The parser processes the token stream and builds an <strong>Abstract Syntax Tree (AST)</strong>. Each node represents a language construct. The tree shows the hierarchical structure of the program.</p>
+          </div>
+          <div class="phase-body">
+            <div class="ast-controls">
+              <button class="btn-xs active" id="ast-expand-all">Expand All</button>
+              <button class="btn-xs" id="ast-collapse-all">Collapse All</button>
+              <label class="toggle-label">
+                <input type="checkbox" id="ast-show-types" checked /> Show Types
+              </label>
+            </div>
+            <div id="ast-viz" class="ast-container">
+              <div class="empty-state">
+                <div class="empty-icon">🌳</div>
+                <div class="empty-text">Click <strong>Compile</strong> to build the AST</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Symbol Table Phase -->
+        <div class="phase-content" id="phase-symtable">
+          <div class="phase-header">
+            <h2>Phase 3: Symbol Table</h2>
+            <p>The <strong>symbol table</strong> records all identifiers (variables, functions) along with their types, scopes, and other attributes. It is the compiler's "dictionary" for the program.</p>
+          </div>
+          <div class="phase-body">
+            <div id="symtable-viz" class="symtable-container">
+              <div class="empty-state">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">Click <strong>Compile</strong> to build the symbol table</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Semantic Phase -->
+        <div class="phase-content" id="phase-semantic">
+          <div class="phase-header">
+            <h2>Phase 4: Semantic Analysis</h2>
+            <p><strong>Semantic analysis</strong> checks that the program is meaningful. This includes type checking, variable declaration checks, and function call validation.</p>
+          </div>
+          <div class="phase-body">
+            <div id="semantic-viz" class="semantic-container">
+              <div class="empty-state">
+                <div class="empty-icon">🔬</div>
+                <div class="empty-text">Click <strong>Compile</strong> to run semantic analysis</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IR / TAC Phase -->
+        <div class="phase-content" id="phase-ir">
+          <div class="phase-header">
+            <h2>Phase 5: Intermediate Representation (IR / TAC)</h2>
+            <p>The compiler generates <strong>Three-Address Code (TAC)</strong> and an <strong>AST-based IR</strong>. TAC breaks complex expressions into simple instructions, each with at most three operands.</p>
+          </div>
+          <div class="phase-body">
+            <div class="ir-tabs">
+              <button class="ir-tab active" data-ir="tac">Three-Address Code (TAC)</button>
+              <button class="ir-tab" data-ir="ast-ir">AST-Based IR</button>
+              <button class="ir-tab" data-ir="cfg">Control Flow Graph</button>
+            </div>
+            <div id="ir-tac" class="ir-view active">
+              <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <div class="empty-text">Click <strong>Compile</strong> to generate TAC</div>
+              </div>
+            </div>
+            <div id="ir-ast-ir" class="ir-view">
+              <div class="empty-state">
+                <div class="empty-icon">🔗</div>
+                <div class="empty-text">Click <strong>Compile</strong> to generate AST-based IR</div>
+              </div>
+            </div>
+            <div id="ir-cfg" class="ir-view">
+              <div class="empty-state">
+                <div class="empty-icon">📊</div>
+                <div class="empty-text">Click <strong>Compile</strong> to generate CFG</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Panel -->
+      <div id="error-panel" class="error-panel" style="display:none">
+        <div class="error-header">
+          <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M10 6v5M10 13.5v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Compilation Errors
+        </div>
+        <div id="error-list" class="error-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Docs View -->
+  <div class="full-view" id="view-docs" style="display:none">
+    <div class="docs-container">
+      <h1>MiniLang Language Reference</h1>
+      <div class="docs-grid" id="docs-content"></div>
+    </div>
+  </div>
+
+  <!-- Examples View -->
+  <div class="full-view" id="view-examples" style="display:none">
+    <div class="examples-container">
+      <h1>Example Programs</h1>
+      <div class="examples-grid" id="examples-content"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Scripts -->
+  <script src="compiler/lexer.js"></script>
+  <script src="compiler/parser.js"></script>
+  <script src="compiler/semantic.js"></script>
+  <script src="compiler/irgen.js"></script>
+  <script src="viz/ast-viz.js"></script>
+  <script src="viz/cfg-viz.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
